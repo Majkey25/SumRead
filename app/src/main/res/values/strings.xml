@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SumRead</string>
+    <string name="overlay_channel_name">Floating overlay</string>
+    <string name="overlay_channel_description">Keeps the SumRead bubble available above other apps.</string>
+    <string name="capture_channel_name">Screen capture</string>
+    <string name="capture_channel_description">Handles one user-initiated screen capture session.</string>
+    <string name="overlay_notification_title">SumRead overlay active</string>
+    <string name="overlay_notification_text">The floating bubble is ready. Tap it to capture selected screen text.</string>
+    <string name="capture_notification_title">SumRead capture running</string>
+    <string name="capture_notification_text">Waiting for a user-initiated screenshot to process.</string>
+</resources>

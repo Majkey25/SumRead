@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="sumread_seed">#195B7A</color>
+    <color name="sumread_surface">#F7F9FC</color>
+    <color name="sumread_surface_dark">#0D1720</color>
+    <color name="ic_launcher_background">#E7F1F7</color>
+</resources>
