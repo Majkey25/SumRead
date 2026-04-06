@@ -19,10 +19,10 @@ class GeminiAiProvider @Inject constructor(
 
     override val type: AiProviderType = AiProviderType.GEMINI
 
-    override suspend fun summarize(apiKey: String, sourceText: String): Result<String> {
+    override suspend fun summarize(apiKey: String, model: String, sourceText: String): Result<String> {
         return runCatching {
             val response = geminiApiService.generateContent(
-                model = com.sumread.util.AppConfig.geminiModel,
+                model = model,
                 apiKey = apiKey,
                 request = GeminiGenerateContentRequest(
                     systemInstruction = GeminiContent(
@@ -49,13 +49,14 @@ class GeminiAiProvider @Inject constructor(
 
     override suspend fun reply(
         apiKey: String,
+        model: String,
         contextText: String,
         conversation: List<ChatMessage>,
         userMessage: String,
     ): Result<String> {
         return runCatching {
             val response = geminiApiService.generateContent(
-                model = com.sumread.util.AppConfig.geminiModel,
+                model = model,
                 apiKey = apiKey,
                 request = GeminiGenerateContentRequest(
                     systemInstruction = GeminiContent(

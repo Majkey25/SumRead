@@ -1,14 +1,17 @@
 package com.sumread.presentation.chat
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -20,7 +23,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import com.sumread.domain.model.ChatMessage
@@ -46,7 +53,7 @@ fun ChatScreen(
         ) {
             SumReadTopBar(
                 title = "Ask AI",
-                subtitle = "This session stays in memory only and uses the current capture as context.",
+                subtitle = "Session stays in memory only. Cleared when you close this screen.",
             )
 
             if (!uiState.hasSession) {
@@ -85,20 +92,43 @@ fun ChatScreen(
                         }
                     }
                 }
+
+                val listState = rememberLazyListState()
+                LaunchedEffect(uiState.messages.size) {
+                    if (uiState.messages.isNotEmpty()) {
+                        listState.animateScrollToItem(uiState.messages.lastIndex)
+                    }
+                }
                 LazyColumn(
+                    state = listState,
                     modifier = Modifier.weight(1f),
                     contentPadding = PaddingValues(vertical = 4.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     items(uiState.messages, key = ChatMessage::id) { message ->
-                        MessageCard(
+                        MessageBubble(
                             message = message,
                             onSpeak = { onSpeakMessage(message.text) },
                         )
                     }
-                }
-                if (uiState.isSending) {
-                    CircularProgressIndicator()
+                    if (uiState.isSending) {
+                        item {
+                            Box(modifier = Modifier.fillMaxWidth()) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier.padding(horizontal = 4.dp),
+                                ) {
+                                    CircularProgressIndicator()
+                                    Text(
+                                        text = "Thinking...",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
                 OutlinedTextField(
                     value = uiState.draftMessage,
@@ -120,7 +150,7 @@ fun ChatScreen(
                         onClick = onStartSpeechInput,
                         modifier = Modifier.weight(1f),
                     ) {
-                        Text(text = "Use microphone")
+                        Text(text = "Microphone")
                     }
                     Button(
                         onClick = onSend,
@@ -150,50 +180,78 @@ private fun ContextCard(contextText: String) {
     ) {
         Column(
             modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Text(
-                text = "Current screen context",
-                style = MaterialTheme.typography.titleSmall,
+                text = "Screen context",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
                 text = contextText,
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = 6,
+                style = MaterialTheme.typography.bodySmall,
+                maxLines = 4,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
 }
 
 @Composable
-private fun MessageCard(
+private fun MessageBubble(
     message: ChatMessage,
     onSpeak: () -> Unit,
 ) {
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = if (message.role == ChatRole.USER) {
-                MaterialTheme.colorScheme.primaryContainer
-            } else {
-                MaterialTheme.colorScheme.surface
-            },
-        ),
-    ) {
+    val isUser = message.role == ChatRole.USER
+    val clipboardManager = LocalClipboardManager.current
+
+    Box(modifier = Modifier.fillMaxWidth()) {
         Column(
-            modifier = Modifier.padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .widthIn(max = 300.dp)
+                .align(if (isUser) Alignment.CenterEnd else Alignment.CenterStart),
+            horizontalAlignment = if (isUser) Alignment.End else Alignment.Start,
         ) {
             Text(
-                text = if (message.role == ChatRole.USER) "You" else "Assistant",
-                style = MaterialTheme.typography.labelLarge,
+                text = if (isUser) "You" else "Assistant",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
             )
-            Text(
-                text = message.text,
-                style = MaterialTheme.typography.bodyMedium,
-            )
-            if (message.role == ChatRole.ASSISTANT) {
-                TextButton(onClick = onSpeak) {
-                    Text(text = "Speak")
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = if (isUser) {
+                        MaterialTheme.colorScheme.primaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.surfaceVariant
+                    },
+                ),
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Text(
+                        text = message.text,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = if (isUser) {
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        TextButton(
+                            onClick = { clipboardManager.setText(AnnotatedString(message.text)) },
+                        ) {
+                            Text(text = "Copy", style = MaterialTheme.typography.labelSmall)
+                        }
+                        if (!isUser) {
+                            TextButton(onClick = onSpeak) {
+                                Text(text = "Speak", style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+                    }
                 }
             }
         }

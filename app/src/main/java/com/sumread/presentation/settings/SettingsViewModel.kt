@@ -7,6 +7,7 @@ import com.sumread.domain.model.AppSettings
 import com.sumread.domain.model.PermissionSnapshot
 import com.sumread.domain.repository.OverlayController
 import com.sumread.domain.repository.SettingsRepository
+import com.sumread.domain.usecase.ClearProviderApiKeyUseCase
 import com.sumread.domain.usecase.ObserveSettingsUseCase
 import com.sumread.domain.usecase.SaveProviderApiKeyUseCase
 import com.sumread.domain.usecase.StartOverlayUseCase
@@ -29,6 +30,7 @@ class SettingsViewModel @Inject constructor(
     observeSettingsUseCase: ObserveSettingsUseCase,
     private val updateSettingsUseCase: UpdateSettingsUseCase,
     private val saveProviderApiKeyUseCase: SaveProviderApiKeyUseCase,
+    private val clearProviderApiKeyUseCase: ClearProviderApiKeyUseCase,
     private val startOverlayUseCase: StartOverlayUseCase,
     private val stopOverlayUseCase: StopOverlayUseCase,
     private val settingsRepository: SettingsRepository,
@@ -56,6 +58,7 @@ class SettingsViewModel @Inject constructor(
                 isOverlayRunning = isRunning,
                 groqConfigured = settingsRepository.hasApiKey(AiProviderType.GROQ),
                 geminiConfigured = settingsRepository.hasApiKey(AiProviderType.GEMINI),
+                openaiConfigured = settingsRepository.hasApiKey(AiProviderType.OPENAI),
                 transientMessage = message,
             )
         }
@@ -65,6 +68,9 @@ class SettingsViewModel @Inject constructor(
             initialValue = SettingsUiState(
                 settings = AppSettings(
                     selectedProvider = AiProviderType.GROQ,
+                    groqModel = AppConfig.groqModel,
+                    geminiModel = AppConfig.geminiModel,
+                    openaiModel = AppConfig.openaiModel,
                     speechRate = AppConfig.defaultSpeechRate,
                     speechPitch = AppConfig.defaultSpeechPitch,
                     languageTag = LanguageCatalog.supportedOptions.first().languageTag,
@@ -76,6 +82,7 @@ class SettingsViewModel @Inject constructor(
                 isOverlayRunning = false,
                 groqConfigured = false,
                 geminiConfigured = false,
+                openaiConfigured = false,
                 transientMessage = null,
             ),
         )
@@ -108,10 +115,23 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun updateModel(provider: AiProviderType, modelId: String) {
+        viewModelScope.launch {
+            updateSettingsUseCase.model(provider, modelId)
+        }
+    }
+
     fun saveApiKey(provider: AiProviderType, value: String) {
         viewModelScope.launch {
             saveProviderApiKeyUseCase(provider, value)
             messageState.value = "${provider.title} API key saved."
+        }
+    }
+
+    fun clearApiKey(provider: AiProviderType) {
+        viewModelScope.launch {
+            clearProviderApiKeyUseCase(provider)
+            messageState.value = "${provider.title} API key cleared."
         }
     }
 

@@ -96,6 +96,10 @@ class FloatingService : Service() {
         panel.findViewById<Button>(R.id.actionChat).setOnClickListener {
             launchCapture(CaptureMode.AI_CHAT)
         }
+        panel.findViewById<Button>(R.id.actionClipboard).setOnClickListener {
+            actionsView?.visibility = View.GONE
+            startActivity(IntentFactory.clipboardMode(this))
+        }
         panel.findViewById<Button>(R.id.actionStop).setOnClickListener {
             stopSelf()
         }

@@ -2,7 +2,8 @@ package com.sumread.domain.model
 
 enum class AiProviderType(val storageKey: String, val title: String) {
     GROQ(storageKey = "groq", title = "Groq"),
-    GEMINI(storageKey = "gemini", title = "Gemini");
+    GEMINI(storageKey = "gemini", title = "Gemini"),
+    OPENAI(storageKey = "openai", title = "OpenAI");
 
     companion object {
         fun fromStorageKey(value: String): AiProviderType {

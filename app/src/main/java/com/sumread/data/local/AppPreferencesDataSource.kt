@@ -23,6 +23,9 @@ class AppPreferencesDataSource @Inject constructor(
     suspend fun update(settings: AppSettings) {
         context.settingsDataStore.edit { preferences ->
             preferences[SettingsSerializer.providerKey] = settings.selectedProvider.storageKey
+            preferences[SettingsSerializer.groqModelKey] = settings.groqModel
+            preferences[SettingsSerializer.geminiModelKey] = settings.geminiModel
+            preferences[SettingsSerializer.openaiModelKey] = settings.openaiModel
             preferences[SettingsSerializer.speechRateKey] = settings.speechRate
             preferences[SettingsSerializer.speechPitchKey] = settings.speechPitch
             preferences[SettingsSerializer.languageTagKey] = settings.languageTag

@@ -6,6 +6,7 @@ import com.sumread.util.AppConfig
 import javax.inject.Inject
 import kotlinx.coroutines.flow.first
 
+
 class UpdateSettingsUseCase @Inject constructor(
     private val settingsRepository: SettingsRepository,
 ) {
@@ -31,5 +32,15 @@ class UpdateSettingsUseCase @Inject constructor(
     suspend fun languageTag(value: String) {
         val current = settingsRepository.settings.first()
         settingsRepository.updateSettings(current.copy(languageTag = value))
+    }
+
+    suspend fun model(provider: AiProviderType, modelId: String) {
+        val current = settingsRepository.settings.first()
+        val updated = when (provider) {
+            AiProviderType.GROQ -> current.copy(groqModel = modelId)
+            AiProviderType.GEMINI -> current.copy(geminiModel = modelId)
+            AiProviderType.OPENAI -> current.copy(openaiModel = modelId)
+        }
+        settingsRepository.updateSettings(updated)
     }
 }

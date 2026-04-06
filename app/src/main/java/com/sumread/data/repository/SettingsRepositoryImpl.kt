@@ -25,6 +25,10 @@ class SettingsRepositoryImpl @Inject constructor(
         secretStore.save(alias = provider.storageKey, value = value)
     }
 
+    override suspend fun clearApiKey(provider: AiProviderType) {
+        secretStore.delete(alias = provider.storageKey)
+    }
+
     override suspend fun getApiKey(provider: AiProviderType): String? {
         return secretStore.read(alias = provider.storageKey)
     }

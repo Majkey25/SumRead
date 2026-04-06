@@ -9,6 +9,7 @@ interface SettingsRepository {
 
     suspend fun updateSettings(settings: AppSettings)
     suspend fun saveApiKey(provider: AiProviderType, value: String)
+    suspend fun clearApiKey(provider: AiProviderType)
     suspend fun getApiKey(provider: AiProviderType): String?
     suspend fun hasApiKey(provider: AiProviderType): Boolean
 }

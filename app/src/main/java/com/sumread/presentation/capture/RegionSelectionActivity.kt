@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +52,7 @@ class RegionSelectionActivity : ComponentActivity() {
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                 val context = LocalContext.current
                 var selection by remember { mutableStateOf<CaptureSelection?>(null) }
+                var selectionViewRef by remember { mutableStateOf<RegionSelectionView?>(null) }
 
                 LaunchedEffect(uiState.openChat) {
                     if (uiState.openChat) {
@@ -64,28 +67,31 @@ class RegionSelectionActivity : ComponentActivity() {
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         Text(
                             text = mode.title,
                             style = MaterialTheme.typography.headlineMedium,
                         )
                         Text(
-                            text = "Drag to select the exact region to process. The screenshot is kept only until this action finishes.",
+                            text = "Tap anywhere to select that area, or drag for precise selection.",
                             style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         if (uiState.isLoading) {
                             CircularProgressIndicator()
                         } else {
                             AndroidView(
                                 factory = { viewContext ->
-                                    RegionSelectionView(viewContext).apply {
-                                        onSelectionChanged = { updatedSelection ->
+                                    RegionSelectionView(viewContext).also { view ->
+                                        selectionViewRef = view
+                                        view.onSelectionChanged = { updatedSelection ->
                                             selection = updatedSelection
                                         }
                                     }
                                 },
                                 update = { view ->
+                                    selectionViewRef = view
                                     view.setBitmap(uiState.bitmap)
                                     view.onSelectionChanged = { updatedSelection ->
                                         selection = updatedSelection
@@ -95,6 +101,15 @@ class RegionSelectionActivity : ComponentActivity() {
                                     .fillMaxWidth()
                                     .weight(1f),
                             )
+                        }
+                        // Full screen shortcut
+                        if (!uiState.isLoading && uiState.bitmap != null) {
+                            TextButton(
+                                onClick = { selectionViewRef?.selectAll() },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Text(text = "Select full screen")
+                            }
                         }
                         uiState.resultText?.let { resultText ->
                             Text(
@@ -115,37 +130,42 @@ class RegionSelectionActivity : ComponentActivity() {
                         if (uiState.isProcessing) {
                             CircularProgressIndicator()
                         }
-                        Button(
-                            onClick = {
-                                if (uiState.resultText != null && mode != CaptureMode.AI_CHAT) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            OutlinedButton(
+                                onClick = {
+                                    viewModel.deleteCapture(imagePath)
                                     finish()
-                                } else {
-                                    viewModel.processSelection(
-                                        path = imagePath,
-                                        mode = mode,
-                                        selection = selection,
-                                    )
-                                }
-                            },
-                            enabled = !uiState.isProcessing && (selection != null || uiState.resultText != null),
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            Text(
-                                text = when {
-                                    uiState.resultText != null && mode != CaptureMode.AI_CHAT -> "Done"
-                                    mode == CaptureMode.AI_CHAT -> "Continue to chat"
-                                    else -> "Process selection"
                                 },
-                            )
-                        }
-                        OutlinedButton(
-                            onClick = {
-                                viewModel.deleteCapture(imagePath)
-                                finish()
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            Text(text = "Cancel")
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                Text(text = "Cancel")
+                            }
+                            Button(
+                                onClick = {
+                                    if (uiState.resultText != null && mode != CaptureMode.AI_CHAT) {
+                                        finish()
+                                    } else {
+                                        viewModel.processSelection(
+                                            path = imagePath,
+                                            mode = mode,
+                                            selection = selection,
+                                        )
+                                    }
+                                },
+                                enabled = !uiState.isProcessing && (selection != null || uiState.resultText != null),
+                                modifier = Modifier.weight(1f),
+                            ) {
+                                Text(
+                                    text = when {
+                                        uiState.resultText != null && mode != CaptureMode.AI_CHAT -> "Done"
+                                        mode == CaptureMode.AI_CHAT -> "Continue to chat"
+                                        else -> "Process"
+                                    },
+                                )
+                            }
                         }
                     }
                 }

@@ -7,6 +7,7 @@ import com.sumread.MainActivity
 import com.sumread.domain.model.CaptureMode
 import com.sumread.presentation.chat.ChatActivity
 import com.sumread.presentation.capture.RegionSelectionActivity
+import com.sumread.presentation.clipboard.ClipboardModeActivity
 import com.sumread.presentation.overlay.CapturePermissionActivity
 import com.sumread.service.FloatingService
 import com.sumread.service.MediaProjectionForegroundService
@@ -69,6 +70,12 @@ object IntentFactory {
 
     fun chat(context: Context): Intent {
         return Intent(context, ChatActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+    }
+
+    fun clipboardMode(context: Context): Intent {
+        return Intent(context, ClipboardModeActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
     }

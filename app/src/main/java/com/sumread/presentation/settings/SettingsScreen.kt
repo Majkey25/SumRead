@@ -40,6 +40,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.sumread.domain.model.AiProviderType
 import com.sumread.presentation.common.SumReadTopBar
+import com.sumread.util.AppConfig
 import com.sumread.util.LanguageCatalog
 
 @Composable
@@ -91,8 +92,14 @@ fun SettingsScreen(
                     selectedProvider = uiState.settings.selectedProvider,
                     groqConfigured = uiState.groqConfigured,
                     geminiConfigured = uiState.geminiConfigured,
+                    openaiConfigured = uiState.openaiConfigured,
                     onProviderSelected = viewModel::updateProvider,
                     onSaveApiKey = viewModel::saveApiKey,
+                    onClearApiKey = viewModel::clearApiKey,
+                    selectedGroqModel = uiState.settings.groqModel,
+                    selectedGeminiModel = uiState.settings.geminiModel,
+                    selectedOpenaiModel = uiState.settings.openaiModel,
+                    onModelSelected = viewModel::updateModel,
                 )
             }
             item {
@@ -199,11 +206,18 @@ private fun ProviderCard(
     selectedProvider: AiProviderType,
     groqConfigured: Boolean,
     geminiConfigured: Boolean,
+    openaiConfigured: Boolean,
+    selectedGroqModel: String,
+    selectedGeminiModel: String,
+    selectedOpenaiModel: String,
     onProviderSelected: (AiProviderType) -> Unit,
     onSaveApiKey: (AiProviderType, String) -> Unit,
+    onClearApiKey: (AiProviderType) -> Unit,
+    onModelSelected: (AiProviderType, String) -> Unit,
 ) {
     var groqKey by rememberSaveable { mutableStateOf("") }
     var geminiKey by rememberSaveable { mutableStateOf("") }
+    var openaiKey by rememberSaveable { mutableStateOf("") }
 
     SectionCard(title = "AI providers") {
         Text(
@@ -219,17 +233,37 @@ private fun ProviderCard(
                 val configured = when (provider) {
                     AiProviderType.GROQ -> groqConfigured
                     AiProviderType.GEMINI -> geminiConfigured
+                    AiProviderType.OPENAI -> openaiConfigured
                 }
                 AssistChip(
                     onClick = { onProviderSelected(provider) },
                     label = {
-                        Text(
-                            text = if (configured) {
-                                "${provider.title} configured"
-                            } else {
-                                provider.title
-                            },
-                        )
+                        val suffix = if (provider == selectedProvider) " (active)" else if (configured) " configured" else ""
+                        Text(text = provider.title + suffix)
+                    },
+                )
+            }
+        }
+        val (activeModels, activeModel) = when (selectedProvider) {
+            AiProviderType.GROQ -> AppConfig.groqModels to selectedGroqModel
+            AiProviderType.GEMINI -> AppConfig.geminiModels to selectedGeminiModel
+            AiProviderType.OPENAI -> AppConfig.openaiModels to selectedOpenaiModel
+        }
+        Text(
+            text = "Model (${selectedProvider.title})",
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(top = 12.dp),
+        )
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            activeModels.forEach { modelId ->
+                AssistChip(
+                    onClick = { onModelSelected(selectedProvider, modelId) },
+                    label = {
+                        val suffix = if (modelId == activeModel) " selected" else ""
+                        Text(text = modelId + suffix)
                     },
                 )
             }
@@ -240,6 +274,7 @@ private fun ProviderCard(
             configured = groqConfigured,
             onValueChanged = { groqKey = it },
             onSave = { onSaveApiKey(AiProviderType.GROQ, groqKey) },
+            onClear = { onClearApiKey(AiProviderType.GROQ) },
         )
         ApiKeyField(
             title = "Gemini API key",
@@ -247,11 +282,15 @@ private fun ProviderCard(
             configured = geminiConfigured,
             onValueChanged = { geminiKey = it },
             onSave = { onSaveApiKey(AiProviderType.GEMINI, geminiKey) },
+            onClear = { onClearApiKey(AiProviderType.GEMINI) },
         )
-        Text(
-            text = "Selected provider: ${selectedProvider.title}",
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.padding(top = 8.dp),
+        ApiKeyField(
+            title = "OpenAI API key",
+            value = openaiKey,
+            configured = openaiConfigured,
+            onValueChanged = { openaiKey = it },
+            onSave = { onSaveApiKey(AiProviderType.OPENAI, openaiKey) },
+            onClear = { onClearApiKey(AiProviderType.OPENAI) },
         )
     }
 }
@@ -263,13 +302,14 @@ private fun ApiKeyField(
     configured: Boolean,
     onValueChanged: (String) -> Unit,
     onSave: () -> Unit,
+    onClear: () -> Unit,
 ) {
     Column(
         modifier = Modifier.padding(top = 12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
-            text = if (configured) "$title saved securely" else title,
+            text = if (configured) "$title (saved securely)" else title,
             style = MaterialTheme.typography.titleSmall,
         )
         OutlinedTextField(
@@ -283,11 +323,21 @@ private fun ApiKeyField(
                 keyboardType = KeyboardType.Password,
             ),
         )
-        TextButton(
-            onClick = onSave,
-            enabled = value.isNotBlank(),
-        ) {
-            Text(text = "Save")
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            TextButton(
+                onClick = onSave,
+                enabled = value.isNotBlank(),
+            ) {
+                Text(text = "Save")
+            }
+            if (configured) {
+                TextButton(onClick = onClear) {
+                    Text(
+                        text = "Clear",
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
         }
     }
 }

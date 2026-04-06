@@ -9,5 +9,6 @@ data class SettingsUiState(
     val isOverlayRunning: Boolean,
     val groqConfigured: Boolean,
     val geminiConfigured: Boolean,
+    val openaiConfigured: Boolean,
     val transientMessage: String?,
 )

@@ -2,8 +2,10 @@ package com.sumread.data.remote
 
 import com.sumread.domain.model.AiProviderType
 import com.sumread.domain.model.ChatMessage
-import com.sumread.domain.model.OperationFailure
+import com.sumread.domain.model.ChatRole
 import com.sumread.domain.model.OperationException
+import com.sumread.domain.model.OperationFailure
+import com.sumread.util.AppConfig
 import java.io.IOException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException
@@ -12,28 +14,28 @@ import javax.inject.Singleton
 import retrofit2.HttpException
 
 @Singleton
-class GroqAiProvider @Inject constructor(
-    private val groqApiService: GroqApiService,
+class OpenAiAiProvider @Inject constructor(
+    private val openAiApiService: OpenAiApiService,
 ) : AiProvider {
 
-    override val type: AiProviderType = AiProviderType.GROQ
+    override val type: AiProviderType = AiProviderType.OPENAI
 
     override suspend fun summarize(apiKey: String, model: String, sourceText: String): Result<String> {
         return runCatching {
-            val response = groqApiService.createChatCompletion(
+            val response = openAiApiService.createChatCompletion(
                 authorization = "Bearer $apiKey",
-                request = GroqChatRequest(
+                request = OpenAiChatRequest(
                     model = model,
                     temperature = 0.2f,
                     messages = listOf(
-                        GroqMessage(role = "system", content = AiPromptFactory.summarySystemPrompt()),
-                        GroqMessage(role = "user", content = AiPromptFactory.summaryUserPrompt(sourceText)),
+                        OpenAiMessage(role = "system", content = AiPromptFactory.summarySystemPrompt()),
+                        OpenAiMessage(role = "user", content = AiPromptFactory.summaryUserPrompt(sourceText)),
                     ),
                 ),
             )
             response.choices.firstOrNull()?.message?.content?.trim()
                 ?.takeIf(String::isNotBlank)
-                ?: throw OperationException(OperationFailure.ProviderFailure("Groq returned an empty response."))
+                ?: throw OperationException(OperationFailure.ProviderFailure("OpenAI returned an empty response."))
         }.mapFailure()
     }
 
@@ -45,18 +47,19 @@ class GroqAiProvider @Inject constructor(
         userMessage: String,
     ): Result<String> {
         return runCatching {
-            val response = groqApiService.createChatCompletion(
+            val response = openAiApiService.createChatCompletion(
                 authorization = "Bearer $apiKey",
-                request = GroqChatRequest(
+                request = OpenAiChatRequest(
                     model = model,
                     temperature = 0.3f,
-                    messages = AiPromptFactory.chatMessages(contextText, conversation, userMessage)
-                        .map { GroqMessage(role = it.role, content = it.content) },
+                    messages = AiPromptFactory.chatMessages(contextText, conversation, userMessage).map {
+                        OpenAiMessage(role = it.role, content = it.content)
+                    },
                 ),
             )
             response.choices.firstOrNull()?.message?.content?.trim()
                 ?.takeIf(String::isNotBlank)
-                ?: throw OperationException(OperationFailure.ProviderFailure("Groq returned an empty response."))
+                ?: throw OperationException(OperationFailure.ProviderFailure("OpenAI returned an empty response."))
         }.mapFailure()
     }
 }
@@ -73,12 +76,12 @@ private fun <T> Result<T>.mapFailure(): Result<T> {
                     -> OperationException(OperationFailure.NetworkUnavailable)
 
                     is HttpException -> OperationException(
-                        OperationFailure.ProviderFailure("Groq request failed with HTTP ${error.code()}."),
+                        OperationFailure.ProviderFailure("OpenAI request failed with HTTP ${error.code()}.")
                     )
 
                     is OperationException -> error
                     else -> OperationException(
-                        OperationFailure.ProviderFailure(error.message ?: "Groq request failed."),
+                        OperationFailure.ProviderFailure(error.message ?: "OpenAI request failed."),
                     )
                 },
             )

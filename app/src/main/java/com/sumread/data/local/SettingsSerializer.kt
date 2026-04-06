@@ -10,6 +10,9 @@ import com.sumread.util.LanguageCatalog
 
 object SettingsSerializer {
     val providerKey = stringPreferencesKey("selected_provider")
+    val groqModelKey = stringPreferencesKey("groq_model")
+    val geminiModelKey = stringPreferencesKey("gemini_model")
+    val openaiModelKey = stringPreferencesKey("openai_model")
     val speechRateKey = floatPreferencesKey("speech_rate")
     val speechPitchKey = floatPreferencesKey("speech_pitch")
     val languageTagKey = stringPreferencesKey("language_tag")
@@ -19,6 +22,9 @@ object SettingsSerializer {
             selectedProvider = AiProviderType.fromStorageKey(
                 value = preferences[providerKey] ?: AiProviderType.GROQ.storageKey,
             ),
+            groqModel = preferences[groqModelKey] ?: AppConfig.groqModel,
+            geminiModel = preferences[geminiModelKey] ?: AppConfig.geminiModel,
+            openaiModel = preferences[openaiModelKey] ?: AppConfig.openaiModel,
             speechRate = (preferences[speechRateKey] ?: AppConfig.defaultSpeechRate)
                 .coerceIn(AppConfig.minSpeechRate, AppConfig.maxSpeechRate),
             speechPitch = (preferences[speechPitchKey] ?: AppConfig.defaultSpeechPitch)

@@ -3,6 +3,7 @@ package com.sumread.data.repository
 import com.sumread.data.remote.AiProvider
 import com.sumread.data.remote.GeminiAiProvider
 import com.sumread.data.remote.GroqAiProvider
+import com.sumread.data.remote.OpenAiAiProvider
 import com.sumread.domain.model.AiProviderType
 import com.sumread.domain.model.ChatMessage
 import com.sumread.domain.model.OperationFailure
@@ -18,14 +19,12 @@ class AiRepositoryImpl @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val groqAiProvider: GroqAiProvider,
     private val geminiAiProvider: GeminiAiProvider,
+    private val openAiAiProvider: OpenAiAiProvider,
 ) : AiRepository {
 
     override suspend fun summarize(sourceText: String): Result<String> {
-        val providerWithKey = selectedProvider() ?: return failureResult(OperationFailure.MissingApiKey)
-        return providerWithKey.first.summarize(
-            apiKey = providerWithKey.second,
-            sourceText = sourceText,
-        )
+        val (provider, apiKey, model) = selectedProvider() ?: return failureResult(OperationFailure.MissingApiKey)
+        return provider.summarize(apiKey = apiKey, model = model, sourceText = sourceText)
     }
 
     override suspend fun reply(
@@ -33,24 +32,24 @@ class AiRepositoryImpl @Inject constructor(
         conversation: List<ChatMessage>,
         userMessage: String,
     ): Result<String> {
-        val providerWithKey = selectedProvider() ?: return failureResult(OperationFailure.MissingApiKey)
-        return providerWithKey.first.reply(
-            apiKey = providerWithKey.second,
+        val (provider, apiKey, model) = selectedProvider() ?: return failureResult(OperationFailure.MissingApiKey)
+        return provider.reply(
+            apiKey = apiKey,
+            model = model,
             contextText = contextText,
             conversation = conversation,
             userMessage = userMessage,
         )
     }
 
-    private suspend fun selectedProvider(): Pair<AiProvider, String>? {
+    private suspend fun selectedProvider(): Triple<AiProvider, String, String>? {
         val settings = settingsRepository.settings.first()
         val apiKey = settingsRepository.getApiKey(settings.selectedProvider)?.trim().orEmpty()
-        if (apiKey.isBlank()) {
-            return null
-        }
+        if (apiKey.isBlank()) return null
         return when (settings.selectedProvider) {
-            AiProviderType.GROQ -> groqAiProvider to apiKey
-            AiProviderType.GEMINI -> geminiAiProvider to apiKey
+            AiProviderType.GROQ -> Triple(groqAiProvider, apiKey, settings.groqModel)
+            AiProviderType.GEMINI -> Triple(geminiAiProvider, apiKey, settings.geminiModel)
+            AiProviderType.OPENAI -> Triple(openAiAiProvider, apiKey, settings.openaiModel)
         }
     }
 }

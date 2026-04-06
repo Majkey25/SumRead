@@ -3,7 +3,8 @@ package com.sumread.domain.model
 enum class CaptureMode(val title: String) {
     READ_ALOUD(title = "Read aloud"),
     AI_SUMMARY(title = "Summarize"),
-    AI_CHAT(title = "Ask AI");
+    AI_CHAT(title = "Ask AI"),
+    CLIPBOARD(title = "Clipboard");
 
     companion object {
         fun fromName(value: String): CaptureMode {

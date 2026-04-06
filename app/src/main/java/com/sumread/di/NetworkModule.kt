@@ -4,6 +4,7 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.sumread.data.remote.GeminiApiService
 import com.sumread.data.remote.GroqApiService
+import com.sumread.data.remote.OpenAiApiService
 import com.sumread.util.AppConfig
 import dagger.Module
 import dagger.Provides
@@ -64,5 +65,19 @@ object NetworkModule {
             .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
             .create(GeminiApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideOpenAiApiService(
+        okHttpClient: OkHttpClient,
+        gson: Gson,
+    ): OpenAiApiService {
+        return Retrofit.Builder()
+            .baseUrl(AppConfig.openaiBaseUrl)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create(gson))
+            .build()
+            .create(OpenAiApiService::class.java)
     }
 }

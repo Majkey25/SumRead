@@ -61,6 +61,18 @@ class AndroidKeystoreSecretStore @Inject constructor(
         }
     }
 
+    override suspend fun delete(alias: String) {
+        withContext(dispatchersProvider.io) {
+            context.getSharedPreferences(AppConfig.secretsName, Context.MODE_PRIVATE)
+                .edit()
+                .remove(alias)
+                .apply()
+            if (keyStore.containsAlias(alias)) {
+                keyStore.deleteEntry(alias)
+            }
+        }
+    }
+
     private fun getOrCreateSecretKey(alias: String): SecretKey {
         val existing = keyStore.getKey(alias, null) as? SecretKey
         if (existing != null) {

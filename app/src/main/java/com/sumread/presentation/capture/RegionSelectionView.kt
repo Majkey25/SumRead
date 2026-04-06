@@ -9,8 +9,10 @@ import android.graphics.RectF
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import com.sumread.domain.model.CaptureSelection
 import com.sumread.util.RectUtils
+import kotlin.math.abs
 import kotlin.math.max
 
 class RegionSelectionView @JvmOverloads constructor(
@@ -20,12 +22,24 @@ class RegionSelectionView @JvmOverloads constructor(
 
     var onSelectionChanged: (CaptureSelection?) -> Unit = {}
 
+    private val density = context.resources.displayMetrics.density
+    private val touchSlop = ViewConfiguration.get(context).scaledTouchSlop.toFloat()
+
+    // Tap auto-expand size in dp (wide paragraph strip)
+    private val tapExpandWidthDp = 300f
+    private val tapExpandHeightDp = 120f
+
     private val bitmapPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val dimPaint = Paint().apply { color = Color.argb(170, 8, 12, 18) }
     private val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.WHITE
         style = Paint.Style.STROKE
-        strokeWidth = resources.displayMetrics.density * 2
+        strokeWidth = density * 2
+    }
+    private val tapHintPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.argb(200, 255, 255, 255)
+        textSize = density * 13f
+        textAlign = Paint.Align.CENTER
     }
 
     private var bitmap: Bitmap? = null
@@ -33,14 +47,32 @@ class RegionSelectionView @JvmOverloads constructor(
     private var selectedRect: RectF? = null
     private var startX = 0f
     private var startY = 0f
+    private var dragging = false
+    private var hasSelection = false
 
     fun setBitmap(value: Bitmap?) {
-        if (bitmap === value) {
-            return
-        }
+        if (bitmap === value) return
         bitmap = value
         selectedRect = null
+        hasSelection = false
         onSelectionChanged(null)
+        invalidate()
+    }
+
+    /** Selects the entire drawn bitmap area — used by the "Full screen" button. */
+    fun selectAll() {
+        val source = bitmap ?: return
+        val rect = RectF(drawnBitmapRect)
+        selectedRect = rect
+        hasSelection = true
+        onSelectionChanged(
+            RectUtils.mapToBitmap(
+                selectedRect = rect,
+                drawnBitmapRect = drawnBitmapRect,
+                bitmapWidth = source.width,
+                bitmapHeight = source.height,
+            ),
+        )
         invalidate()
     }
 
@@ -48,15 +80,26 @@ class RegionSelectionView @JvmOverloads constructor(
         super.onDraw(canvas)
         val source = bitmap ?: return
         updateDrawnBitmapRect(source)
+
         canvas.drawColor(Color.BLACK)
         canvas.drawBitmap(source, null, drawnBitmapRect, bitmapPaint)
-        selectedRect?.let { rect ->
+
+        val rect = selectedRect
+        if (rect != null) {
             canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), dimPaint)
             canvas.save()
             canvas.clipRect(rect)
             canvas.drawBitmap(source, null, drawnBitmapRect, bitmapPaint)
             canvas.restore()
             canvas.drawRect(rect, strokePaint)
+        } else {
+            // Hint text when no selection yet
+            canvas.drawText(
+                "Tap to select area  •  Drag for precise selection",
+                width / 2f,
+                drawnBitmapRect.bottom + density * 20f,
+                tapHintPaint,
+            )
         }
     }
 
@@ -69,39 +112,95 @@ class RegionSelectionView @JvmOverloads constructor(
             MotionEvent.ACTION_DOWN -> {
                 startX = event.x
                 startY = event.y
+                dragging = false
                 selectedRect = RectF(startX, startY, startX, startY)
                 invalidate()
                 return true
             }
 
-            MotionEvent.ACTION_MOVE,
+            MotionEvent.ACTION_MOVE -> {
+                val deltaX = abs(event.x - startX)
+                val deltaY = abs(event.y - startY)
+                if (!dragging && (deltaX > touchSlop || deltaY > touchSlop)) {
+                    dragging = true
+                }
+                if (dragging) {
+                    val updatedRect = RectUtils.normalizedRect(
+                        startX = startX,
+                        startY = startY,
+                        endX = event.x,
+                        endY = event.y,
+                        bounds = drawnBitmapRect,
+                    )
+                    selectedRect = updatedRect
+                    onSelectionChanged(
+                        if (max(updatedRect.width(), updatedRect.height()) >= density * 24) {
+                            RectUtils.mapToBitmap(
+                                selectedRect = updatedRect,
+                                drawnBitmapRect = drawnBitmapRect,
+                                bitmapWidth = source.width,
+                                bitmapHeight = source.height,
+                            )
+                        } else {
+                            null
+                        },
+                    )
+                    invalidate()
+                }
+                return true
+            }
+
             MotionEvent.ACTION_UP -> {
-                val updatedRect = RectUtils.normalizedRect(
-                    startX = startX,
-                    startY = startY,
-                    endX = event.x,
-                    endY = event.y,
-                    bounds = drawnBitmapRect,
-                )
-                selectedRect = updatedRect
-                val mappedSelection = if (
-                    max(updatedRect.width(), updatedRect.height()) >= resources.displayMetrics.density * 24
-                ) {
-                    RectUtils.mapToBitmap(
-                        selectedRect = updatedRect,
-                        drawnBitmapRect = drawnBitmapRect,
-                        bitmapWidth = source.width,
-                        bitmapHeight = source.height,
+                if (!dragging) {
+                    // Tap: auto-expand a region around the tap point
+                    val tapRect = expandTapToRect(event.x, event.y)
+                    selectedRect = tapRect
+                    hasSelection = true
+                    onSelectionChanged(
+                        RectUtils.mapToBitmap(
+                            selectedRect = tapRect,
+                            drawnBitmapRect = drawnBitmapRect,
+                            bitmapWidth = source.width,
+                            bitmapHeight = source.height,
+                        ),
                     )
                 } else {
-                    null
+                    // Drag ended — emit final mapped selection
+                    val finalRect = selectedRect
+                    if (finalRect != null && max(finalRect.width(), finalRect.height()) >= density * 24) {
+                        hasSelection = true
+                        onSelectionChanged(
+                            RectUtils.mapToBitmap(
+                                selectedRect = finalRect,
+                                drawnBitmapRect = drawnBitmapRect,
+                                bitmapWidth = source.width,
+                                bitmapHeight = source.height,
+                            ),
+                        )
+                    }
                 }
-                onSelectionChanged(mappedSelection)
                 invalidate()
+                performClick()
                 return true
             }
         }
         return super.onTouchEvent(event)
+    }
+
+    override fun performClick(): Boolean {
+        super.performClick()
+        return true
+    }
+
+    private fun expandTapToRect(x: Float, y: Float): RectF {
+        val halfW = tapExpandWidthDp * density / 2f
+        val halfH = tapExpandHeightDp * density / 2f
+        return RectF(
+            (x - halfW).coerceAtLeast(drawnBitmapRect.left),
+            (y - halfH).coerceAtLeast(drawnBitmapRect.top),
+            (x + halfW).coerceAtMost(drawnBitmapRect.right),
+            (y + halfH).coerceAtMost(drawnBitmapRect.bottom),
+        )
     }
 
     private fun updateDrawnBitmapRect(source: Bitmap) {
