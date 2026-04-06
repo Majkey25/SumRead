@@ -24,12 +24,14 @@ object BitmapUtils {
         val pixelStride = plane.pixelStride
         val rowStride = plane.rowStride
         val rowPadding = rowStride - pixelStride * width
-        val bitmap = Bitmap.createBitmap(
+        val padded = Bitmap.createBitmap(
             width + rowPadding / pixelStride,
             height,
             Bitmap.Config.ARGB_8888,
         )
-        bitmap.copyPixelsFromBuffer(buffer)
-        return Bitmap.createBitmap(bitmap, 0, 0, width, height)
+        padded.copyPixelsFromBuffer(buffer)
+        val cropped = Bitmap.createBitmap(padded, 0, 0, width, height)
+        padded.recycle()
+        return cropped
     }
 }

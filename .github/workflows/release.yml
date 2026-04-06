@@ -1,0 +1,120 @@
+name: Release
+
+# Trigger: push a tag like v0.2.0
+# The workflow builds a debug APK, creates a GitHub Release, and attaches the APK automatically.
+#
+# To publish a release:
+#   git tag v0.2.0 && git push origin v0.2.0
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-encryption-key: ${{ secrets.GRADLE_ENCRYPTION_KEY }}
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      - name: Extract version from tag
+        id: ver
+        run: |
+          RAW="${GITHUB_REF#refs/tags/v}"
+          echo "name=${RAW}" >> "$GITHUB_OUTPUT"
+          # Compute numeric versionCode: major*10000 + minor*100 + patch
+          # Strip any pre-release suffix for the numeric part
+          NUMERIC="${RAW%%-*}"
+          IFS='.' read -ra P <<< "$NUMERIC"
+          CODE=$(( ${P[0]:-0} * 10000 + ${P[1]:-0} * 100 + ${P[2]:-0} ))
+          echo "code=${CODE}" >> "$GITHUB_OUTPUT"
+          # Determine if this is a pre-release (contains a hyphen like -beta, -rc, -alpha)
+          if [[ "$RAW" == *-* ]]; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build debug APK
+        env:
+          VERSION_NAME: ${{ steps.ver.outputs.name }}
+          VERSION_CODE: ${{ steps.ver.outputs.code }}
+        run: ./gradlew assembleDebug --no-daemon --parallel
+
+      - name: Rename APK
+        run: |
+          mv app/build/outputs/apk/debug/app-debug.apk \
+             "app/build/outputs/apk/debug/SumRead-${{ steps.ver.outputs.name }}-debug.apk"
+
+      - name: Generate changelog
+        id: log
+        run: |
+          PREV=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -n "$PREV" ]; then
+            ENTRIES=$(git log --oneline --no-merges "${PREV}..HEAD" | head -50)
+          else
+            ENTRIES=$(git log --oneline --no-merges | head -50)
+          fi
+          {
+            echo 'entries<<ENDOFLOG'
+            echo "$ENTRIES"
+            echo 'ENDOFLOG'
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "SumRead v${{ steps.ver.outputs.name }}"
+          prerelease: ${{ steps.ver.outputs.prerelease }}
+          body: |
+            ## SumRead v${{ steps.ver.outputs.name }}
+
+            > **Status:** Pre-release debug build — production release is not yet available on Google Play.
+
+            ### What is this?
+            SumRead is a privacy-first Android overlay app that reads screen content aloud and lets you chat with AI about it.
+            Tap the floating button over any app, select a region, and choose Read / Summarize / Ask AI.
+
+            ### Changes
+            ```
+            ${{ steps.log.outputs.entries }}
+            ```
+
+            ### Installation
+            1. Download `SumRead-${{ steps.ver.outputs.name }}-debug.apk` below.
+            2. On Android: **Settings → Apps → Special app access → Install unknown apps** — allow your browser or file manager.
+            3. Open the APK to install.
+
+            ### Requirements
+            - Android 8.0 (API 26) or higher
+            - For AI features: your own API key for Groq, Gemini, or OpenAI
+
+            ### Privacy
+            Read aloud runs entirely on-device (ML Kit OCR + Android TTS).
+            AI features only activate when you provide an API key and explicitly trigger them.
+            No data is collected or stored by SumRead itself.
+
+          files: |
+            app/build/outputs/apk/debug/SumRead-${{ steps.ver.outputs.name }}-debug.apk

@@ -5,7 +5,6 @@ import com.sumread.domain.model.ChatMessage
 import com.sumread.domain.model.ChatRole
 import com.sumread.domain.model.OperationException
 import com.sumread.domain.model.OperationFailure
-import com.sumread.util.AppConfig
 import java.io.IOException
 import java.net.SocketTimeoutException
 import java.net.UnknownHostException

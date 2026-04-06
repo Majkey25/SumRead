@@ -52,7 +52,9 @@ class RegionSelectionActivity : ComponentActivity() {
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
                 val context = LocalContext.current
                 var selection by remember { mutableStateOf<CaptureSelection?>(null) }
-                var selectionViewRef by remember { mutableStateOf<RegionSelectionView?>(null) }
+
+                // Plain array — NOT mutableStateOf — so assigning the view never triggers recomposition.
+                val selectionViewRef = remember { arrayOfNulls<RegionSelectionView>(1) }
 
                 LaunchedEffect(uiState.openChat) {
                     if (uiState.openChat) {
@@ -84,14 +86,14 @@ class RegionSelectionActivity : ComponentActivity() {
                             AndroidView(
                                 factory = { viewContext ->
                                     RegionSelectionView(viewContext).also { view ->
-                                        selectionViewRef = view
+                                        selectionViewRef[0] = view
                                         view.onSelectionChanged = { updatedSelection ->
                                             selection = updatedSelection
                                         }
                                     }
                                 },
                                 update = { view ->
-                                    selectionViewRef = view
+                                    selectionViewRef[0] = view
                                     view.setBitmap(uiState.bitmap)
                                     view.onSelectionChanged = { updatedSelection ->
                                         selection = updatedSelection
@@ -102,10 +104,9 @@ class RegionSelectionActivity : ComponentActivity() {
                                     .weight(1f),
                             )
                         }
-                        // Full screen shortcut
                         if (!uiState.isLoading && uiState.bitmap != null) {
                             TextButton(
-                                onClick = { selectionViewRef?.selectAll() },
+                                onClick = { selectionViewRef[0]?.selectAll() },
                                 modifier = Modifier.fillMaxWidth(),
                             ) {
                                 Text(text = "Select full screen")

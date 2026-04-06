@@ -7,6 +7,7 @@ import android.hardware.display.VirtualDisplay
 import android.media.ImageReader
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
+import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.IBinder
@@ -94,14 +95,20 @@ class MediaProjectionForegroundService : Service() {
     }
 
     private suspend fun captureBitmap(projection: MediaProjection) = withContext(dispatchersProvider.main) {
-        val displayMetrics = DisplayMetrics()
         val windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
-        @Suppress("DEPRECATION")
-        windowManager.defaultDisplay.getRealMetrics(displayMetrics)
+        val (screenWidth, screenHeight, screenDensity) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val bounds = windowManager.currentWindowMetrics.bounds
+            Triple(bounds.width(), bounds.height(), resources.displayMetrics.densityDpi)
+        } else {
+            val dm = DisplayMetrics()
+            @Suppress("DEPRECATION")
+            windowManager.defaultDisplay.getRealMetrics(dm)
+            Triple(dm.widthPixels, dm.heightPixels, dm.densityDpi)
+        }
 
         val imageReader = ImageReader.newInstance(
-            displayMetrics.widthPixels,
-            displayMetrics.heightPixels,
+            screenWidth,
+            screenHeight,
             android.graphics.PixelFormat.RGBA_8888,
             2,
         )
@@ -125,9 +132,9 @@ class MediaProjectionForegroundService : Service() {
 
                     virtualDisplay = projection.createVirtualDisplay(
                         "sumread_capture",
-                        displayMetrics.widthPixels,
-                        displayMetrics.heightPixels,
-                        displayMetrics.densityDpi,
+                        screenWidth,
+                        screenHeight,
+                        screenDensity,
                         DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
                         imageReader.surface,
                         null,
