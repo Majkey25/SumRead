@@ -9,7 +9,7 @@ plugins {
 
 android {
     namespace = "com.sumread"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.sumread"
@@ -44,7 +44,7 @@ android {
     kotlin {
         compilerOptions {
             jvmTarget = JvmTarget.JVM_17
-            freeCompilerArgs.add("-Xjvm-default=all")
+            freeCompilerArgs.add("-jvm-default=no-compatibility")
         }
     }
 

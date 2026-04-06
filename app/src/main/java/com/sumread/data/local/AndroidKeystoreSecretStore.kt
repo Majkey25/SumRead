@@ -43,8 +43,8 @@ class AndroidKeystoreSecretStore @Inject constructor(
             val encoded = context.getSharedPreferences(AppConfig.secretsName, Context.MODE_PRIVATE)
                 .getString(alias, null) ?: return@withContext null
             val combined = Base64.decode(encoded, Base64.NO_WRAP)
-            val iv = combined.copyOfRange(startIndex = 0, endIndex = ivSize)
-            val payload = combined.copyOfRange(startIndex = ivSize, endIndex = combined.size)
+            val iv = combined.copyOfRange(fromIndex = 0, toIndex = ivSize)
+            val payload = combined.copyOfRange(fromIndex = ivSize, toIndex = combined.size)
             val cipher = Cipher.getInstance(transformation)
             cipher.init(
                 Cipher.DECRYPT_MODE,

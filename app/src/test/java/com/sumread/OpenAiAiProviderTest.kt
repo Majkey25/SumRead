@@ -28,7 +28,7 @@ class OpenAiAiProviderTest {
         )
         val provider = OpenAiAiProvider(service)
 
-        val result = provider.summarize(apiKey = "secret", sourceText = "Long source text")
+        val result = provider.summarize(apiKey = "secret", model = AppConfig.openaiModel, sourceText = "Long source text")
 
         assertThat(result.getOrNull()).isEqualTo("Short summary")
         assertThat(service.lastAuthorization).isEqualTo("Bearer secret")
@@ -51,6 +51,7 @@ class OpenAiAiProviderTest {
 
         val result = provider.reply(
             apiKey = "secret",
+            model = AppConfig.openaiModel,
             contextText = "Invoice total is 42 EUR",
             conversation = listOf(
                 ChatMessage(id = "1", role = ChatRole.USER, text = "What is the total?"),
@@ -77,7 +78,7 @@ class OpenAiAiProviderTest {
         )
         val provider = OpenAiAiProvider(service)
 
-        val result = provider.summarize(apiKey = "secret", sourceText = "Source")
+        val result = provider.summarize(apiKey = "secret", model = AppConfig.openaiModel, sourceText = "Source")
 
         val error = result.exceptionOrNull()
         assertThat(error).isInstanceOf(OperationException::class.java)

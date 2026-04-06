@@ -40,8 +40,11 @@ class AiRepositoryImplOpenAiTest {
         }
         val repository = AiRepositoryImpl(
             settingsRepository = FakeSettingsRepository(
-                settings = AppSettings(
+                initialSettings = AppSettings(
                     selectedProvider = AiProviderType.OPENAI,
+                    groqModel = "groq-model",
+                    geminiModel = "gemini-model",
+                    openaiModel = "openai-model",
                     speechRate = 1.0f,
                     speechPitch = 1.0f,
                     languageTag = "system",
@@ -74,6 +77,8 @@ private class FakeSettingsRepository(
     }
 
     override suspend fun saveApiKey(provider: AiProviderType, value: String) = Unit
+
+    override suspend fun clearApiKey(provider: AiProviderType) = Unit
 
     override suspend fun getApiKey(provider: AiProviderType): String? = apiKeys[provider]
 

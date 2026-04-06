@@ -78,6 +78,10 @@ class SelectionResultViewModel @Inject constructor(
                             chatSessionRepository.start(extractedText)
                             mutableUiState.value = mutableUiState.value.copy(openChat = true)
                         }
+
+                        CaptureMode.CLIPBOARD -> {
+                            mutableUiState.value = mutableUiState.value.copy(resultText = extractedText)
+                        }
                     }
                 }.onFailure { error ->
                     mutableUiState.value = mutableUiState.value.copy(errorMessage = error.toFailureMessage())
