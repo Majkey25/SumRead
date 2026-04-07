@@ -16,6 +16,8 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout
@@ -56,4 +58,61 @@ jobs:
           path: app/build/reports/lint-results-debug.html
 
       - name: Assemble debug APK
+        env:
+          VERSION_CODE: ${{ github.run_number }}
+          VERSION_NAME: nightly-${{ github.sha }}
         run: ./gradlew assembleDebug --no-daemon --parallel
+
+      - name: Rename APK
+        run: |
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          mv app/build/outputs/apk/debug/app-debug.apk \
+             "app/build/outputs/apk/debug/SumRead-nightly-${SHORT_SHA}.apk"
+
+      - name: Publish nightly pre-release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: nightly
+          name: "SumRead Nightly"
+          prerelease: true
+          make_latest: false
+          body: |
+            ## SumRead Nightly Build
+
+            > **Automated build** from `main` — commit `${{ github.sha }}`
+
+            This is a rolling pre-release. Every push to `main` overwrites this release with the latest APK.
+
+            ### Installation
+            1. Download `SumRead-nightly-*.apk` below.
+            2. On Android: **Settings → Apps → Special app access → Install unknown apps** — allow your browser or file manager.
+            3. Open the APK to install.
+
+            ### Requirements
+            - Android 8.0 (API 26) or higher
+            - For AI features: your own API key for Groq, Gemini, or OpenAI
+
+            ### Privacy
+            OCR and TTS run entirely on-device. AI features only activate when you explicitly provide an API key and trigger them.
+          files: app/build/outputs/apk/debug/SumRead-nightly-*.apk
+
+      - name: Set repository metadata
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh repo edit \
+            --description "📖 Privacy-first Android overlay — capture screen text, read aloud or ask AI (Groq, Gemini, OpenAI). OCR & TTS run fully on-device." \
+            --homepage "https://github.com/${{ github.repository }}/releases/tag/nightly" \
+            --add-topic android \
+            --add-topic kotlin \
+            --add-topic accessibility \
+            --add-topic ocr \
+            --add-topic ai \
+            --add-topic overlay \
+            --add-topic jetpack-compose \
+            --add-topic text-to-speech \
+            --add-topic summarization \
+            --add-topic privacy || true
