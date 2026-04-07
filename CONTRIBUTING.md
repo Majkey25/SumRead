@@ -1,6 +1,6 @@
 # Contributing
 
-This repository is private and maintained as a proprietary product codebase.
+This repository is public but maintained as a proprietary product codebase.
 
 ## Branch naming
 
