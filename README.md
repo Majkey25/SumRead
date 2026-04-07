@@ -11,7 +11,9 @@
 
 SumRead is a production-minded Android application in active development. It provides a floating overlay that lets the user capture a selected screen region, extract text with on-device OCR, read the text aloud locally, summarize it with an optional AI provider, or open a private in-memory chat grounded in the captured content.
 
-This repository is private, proprietary, and structured for a serious future Google Play release. The current distribution target is a pre-release APK, not a production Play build.
+This repository is public yet proprietary, and structured for a serious future Google Play release. The current distribution target is a pre-release APK, not a production Play build.
+<img width="1536" height="1024" alt="SumRead app on Samsung Galaxy S26 Ultra (1)" src="https://github.com/user-attachments/assets/54439a19-13ef-4ef4-88bb-774ce5233329" />
+
 
 ## Current status
 
