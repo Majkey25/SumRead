@@ -2,7 +2,9 @@ package com.sumread.service
 
 import android.app.Service
 import android.content.Intent
+import android.content.pm.ServiceInfo
 import android.graphics.PixelFormat
+import android.os.Build
 import android.os.IBinder
 import android.provider.Settings
 import android.view.Gravity
@@ -40,7 +42,12 @@ class FloatingService : Service() {
         super.onCreate()
         runningStateInternal.value = true
         notificationFactory.ensureChannels()
-        startForeground(AppConfig.overlayNotificationId, notificationFactory.overlayNotification())
+        val notification = notificationFactory.overlayNotification()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(AppConfig.overlayNotificationId, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
+        } else {
+            startForeground(AppConfig.overlayNotificationId, notification)
+        }
         if (!Settings.canDrawOverlays(this)) {
             stopSelf()
             return

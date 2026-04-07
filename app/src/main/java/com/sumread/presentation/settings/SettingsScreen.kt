@@ -47,6 +47,7 @@ import com.sumread.util.LanguageCatalog
 fun SettingsScreen(
     onOpenOverlaySettings: () -> Unit,
     onRequestMicrophonePermission: () -> Unit,
+    onOpenTtsSettings: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -110,6 +111,7 @@ fun SettingsScreen(
                     onRateChanged = viewModel::updateSpeechRate,
                     onPitchChanged = viewModel::updateSpeechPitch,
                     onLanguageChanged = viewModel::updateLanguageTag,
+                    onOpenTtsSettings = onOpenTtsSettings,
                 )
             }
             item { InformationCard() }
@@ -351,42 +353,57 @@ private fun SpeechCard(
     onRateChanged: (Float) -> Unit,
     onPitchChanged: (Float) -> Unit,
     onLanguageChanged: (String) -> Unit,
+    onOpenTtsSettings: () -> Unit,
 ) {
     SectionCard(title = "Speech and language") {
         Text(
-            text = "The current language setting applies to TTS and speech input. OCR currently uses the on-device Latin recognizer.",
+            text = "Uses the on-device TTS engine. Language packs must be installed via your device's TTS settings. OCR currently uses the on-device Latin recognizer.",
             style = MaterialTheme.typography.bodyMedium,
         )
+        TextButton(
+            onClick = onOpenTtsSettings,
+            modifier = Modifier.padding(top = 4.dp),
+        ) {
+            Text(text = "Install language packs (opens TTS settings)")
+        }
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        Text(
+            text = "Language",
+            style = MaterialTheme.typography.titleSmall,
+        )
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            LanguageCatalog.supportedOptions.forEach { option ->
+                AssistChip(
+                    onClick = { onLanguageChanged(option.languageTag) },
+                    label = {
+                        val suffix = if (option.languageTag == languageTag) " \u2713" else ""
+                        Text(text = option.title + suffix)
+                    },
+                )
+            }
+        }
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         Text(
             text = "Speech rate: ${"%.2f".format(speechRate)}",
-            modifier = Modifier.padding(top = 12.dp),
+            style = MaterialTheme.typography.titleSmall,
         )
         Slider(
             value = speechRate,
             onValueChange = onRateChanged,
             valueRange = 0.6f..1.6f,
         )
-        Text(text = "Speech pitch: ${"%.2f".format(speechPitch)}")
+        Text(
+            text = "Speech pitch: ${"%.2f".format(speechPitch)}",
+            style = MaterialTheme.typography.titleSmall,
+        )
         Slider(
             value = speechPitch,
             onValueChange = onPitchChanged,
             valueRange = 0.7f..1.4f,
         )
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-            modifier = Modifier.padding(top = 8.dp),
-        ) {
-            LanguageCatalog.supportedOptions.forEach { option ->
-                AssistChip(
-                    onClick = { onLanguageChanged(option.languageTag) },
-                    label = {
-                        val suffix = if (option.languageTag == languageTag) " selected" else ""
-                        Text(text = option.title + suffix)
-                    },
-                )
-            }
-        }
     }
 }
 

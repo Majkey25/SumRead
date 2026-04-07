@@ -44,12 +44,20 @@ class AiRepositoryImpl @Inject constructor(
 
     private suspend fun selectedProvider(): Triple<AiProvider, String, String>? {
         val settings = settingsRepository.settings.first()
-        val apiKey = settingsRepository.getApiKey(settings.selectedProvider)?.trim().orEmpty()
-        if (apiKey.isBlank()) return null
-        return when (settings.selectedProvider) {
-            AiProviderType.GROQ -> Triple(groqAiProvider, apiKey, settings.groqModel)
-            AiProviderType.GEMINI -> Triple(geminiAiProvider, apiKey, settings.geminiModel)
-            AiProviderType.OPENAI -> Triple(openAiAiProvider, apiKey, settings.openaiModel)
+        val orderedTypes = buildList {
+            add(settings.selectedProvider)
+            AiProviderType.entries.forEach { if (it != settings.selectedProvider) add(it) }
         }
+        for (type in orderedTypes) {
+            val apiKey = settingsRepository.getApiKey(type)?.trim().orEmpty()
+            if (apiKey.isNotBlank()) {
+                return when (type) {
+                    AiProviderType.GROQ -> Triple(groqAiProvider, apiKey, settings.groqModel)
+                    AiProviderType.GEMINI -> Triple(geminiAiProvider, apiKey, settings.geminiModel)
+                    AiProviderType.OPENAI -> Triple(openAiAiProvider, apiKey, settings.openaiModel)
+                }
+            }
+        }
+        return null
     }
 }

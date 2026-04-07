@@ -20,7 +20,7 @@ This repository is public yet proprietary, and structured for a serious future G
 - Architecture: MVVM + Clean Architecture + Hilt.
 - UI: Jetpack Compose for the app, view-based overlay for system overlay behavior, custom region selection view for capture accuracy.
 - Local-first features: overlay control, screen capture flow, region selection, ML Kit OCR, TextToSpeech.
-- AI features: Groq and Gemini behind provider abstractions with user-supplied keys.
+- AI features: Groq, Gemini, and OpenAI behind provider abstractions with user-supplied keys.
 - Chat privacy: memory-only session state, no default storage of captured text or chat history.
 - Release posture: pre-release APK workflow prepared, production signing still pending.
 
@@ -30,11 +30,33 @@ This repository is public yet proprietary, and structured for a serious future G
 - User-initiated MediaProjection capture flow with explicit Android consent.
 - Region selection before OCR processing.
 - On-device ML Kit text recognition.
-- On-device text to speech with configurable speed, pitch, and language.
-- AI summary mode using a selectable provider.
-- AI chat mode grounded in the selected screen content.
-- Secure local storage for provider API keys using Android Keystore-backed encryption.
+- On-device text-to-speech with configurable speed, pitch, and language (27 languages supported).
+- TTS language pack installer — opens device TTS settings to download additional voices (Chinese, Japanese, Korean, Arabic, Hindi, and more).
+- AI summary mode using a selectable provider (Groq / Gemini / OpenAI).
+- Smart AI auto-switch — if the selected provider has no API key, the app automatically falls back to another configured provider so AI features keep working.
+- AI chat mode grounded in the selected screen content — ask follow-up questions, verify facts, or summarize further without re-capturing.
+- Secure local-only storage for provider API keys (see below).
 - Compose settings screen with permission helpers and privacy disclosures.
+
+## API key storage
+
+API keys are **never transmitted or stored in plaintext**. Each key is:
+
+1. Encrypted with a hardware-backed AES-256-GCM key generated inside the Android Keystore (never leaves the secure enclave).
+2. Stored as a Base64-encoded ciphertext in the app's private SharedPreferences (`sumread_secrets`).
+3. Never included in backups (`android:allowBackup="false"`).
+4. Accessible only to this app process — no other app can read them.
+
+To add a key: open **Settings → AI providers**, enter your key in the relevant field, and tap **Save**.  
+To remove a key: tap **Clear** next to the provider.
+
+Supported providers and where to obtain free or low-cost keys:
+
+| Provider | Key source |
+|----------|-----------|
+| Groq | console.groq.com — free tier available |
+| Gemini | aistudio.google.com — free tier available |
+| OpenAI | platform.openai.com — pay-as-you-go |
 
 ## Architecture overview
 
@@ -114,6 +136,7 @@ Required or optional permissions are intentionally limited:
 
 - `SYSTEM_ALERT_WINDOW` for the floating overlay.
 - `FOREGROUND_SERVICE` for visible overlay execution.
+- `FOREGROUND_SERVICE_SPECIAL_USE` for the overlay foreground service type (required on Android 14+).
 - `FOREGROUND_SERVICE_MEDIA_PROJECTION` for the active capture service.
 - `RECORD_AUDIO` for optional speech input in chat.
 - `INTERNET` only for optional cloud AI features.

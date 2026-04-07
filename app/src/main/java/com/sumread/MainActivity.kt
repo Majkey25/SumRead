@@ -5,6 +5,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
+import android.speech.tts.TextToSpeech
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -36,6 +37,7 @@ class MainActivity : ComponentActivity() {
                     onRequestMicrophonePermission = {
                         microphonePermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
                     },
+                    onOpenTtsSettings = ::openTtsSettings,
                 )
             }
         }
@@ -52,5 +54,9 @@ class MainActivity : ComponentActivity() {
             Uri.parse("package:$packageName"),
         )
         startActivity(intent)
+    }
+
+    private fun openTtsSettings() {
+        startActivity(Intent(TextToSpeech.Engine.ACTION_CHECK_TTS_DATA))
     }
 }

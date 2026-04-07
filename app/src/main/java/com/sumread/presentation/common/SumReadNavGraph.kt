@@ -14,6 +14,7 @@ fun SumReadNavGraph(
     viewModel: SettingsViewModel,
     onOpenOverlaySettings: () -> Unit,
     onRequestMicrophonePermission: () -> Unit,
+    onOpenTtsSettings: () -> Unit,
 ) {
     val navController = rememberNavController()
     NavHost(
@@ -25,6 +26,7 @@ fun SumReadNavGraph(
                 viewModel = viewModel,
                 onOpenOverlaySettings = onOpenOverlaySettings,
                 onRequestMicrophonePermission = onRequestMicrophonePermission,
+                onOpenTtsSettings = onOpenTtsSettings,
             )
         }
     }
