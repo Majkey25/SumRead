@@ -60,33 +60,32 @@ jobs:
       - name: Assemble debug APK
         env:
           VERSION_CODE: ${{ github.run_number }}
-          VERSION_NAME: nightly-${{ github.sha }}
+          VERSION_NAME: ${{ github.run_number }}
         run: ./gradlew assembleDebug --no-daemon --parallel
 
       - name: Rename APK
         run: |
-          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
           mv app/build/outputs/apk/debug/app-debug.apk \
-             "app/build/outputs/apk/debug/SumRead-nightly-${SHORT_SHA}.apk"
+             app/build/outputs/apk/debug/SumRead.apk
 
-      - name: Publish nightly pre-release
+      - name: Publish latest release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          tag_name: nightly
-          name: "SumRead Nightly"
-          prerelease: true
-          make_latest: false
+          tag_name: latest
+          name: "SumRead"
+          prerelease: false
+          make_latest: true
           body: |
-            ## SumRead Nightly Build
+            ## SumRead
 
-            > **Automated build** from `main` — commit `${{ github.sha }}`
+            > Automated build from `main` — commit `${{ github.sha }}`
 
-            This is a rolling pre-release. Every push to `main` overwrites this release with the latest APK.
+            Every push to `main` overwrites this release with the latest APK.
 
             ### Installation
-            1. Download `SumRead-nightly-*.apk` below.
+            1. Download `SumRead.apk` below.
             2. On Android: **Settings → Apps → Special app access → Install unknown apps** — allow your browser or file manager.
             3. Open the APK to install.
 
@@ -96,7 +95,7 @@ jobs:
 
             ### Privacy
             OCR and TTS run entirely on-device. AI features only activate when you explicitly provide an API key and trigger them.
-          files: app/build/outputs/apk/debug/SumRead-nightly-*.apk
+          files: app/build/outputs/apk/debug/SumRead.apk
 
       - name: Set repository metadata
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -105,7 +104,7 @@ jobs:
         run: |
           gh repo edit \
             --description "📖 Privacy-first Android overlay — capture screen text, read aloud or ask AI (Groq, Gemini, OpenAI). OCR & TTS run fully on-device." \
-            --homepage "https://github.com/${{ github.repository }}/releases/tag/nightly" \
+            --homepage "https://github.com/${{ github.repository }}/releases/latest" \
             --add-topic android \
             --add-topic kotlin \
             --add-topic accessibility \

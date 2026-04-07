@@ -93,11 +93,10 @@ The app follows a single-module clean structure inside `app/src/main/java/com/su
 - Foreground notifications make long-running sensitive operations visible.
 - Screen capture is always user initiated and always gated by the Android system consent dialog.
 
-## Latest pre-release APK
+## Download APK
 
-- Intended latest APK URL: [sumread-pre-release-debug.apk](https://github.com/Majkey25/SumRead/releases/latest/download/sumread-pre-release-debug.apk)
-- Release index: [GitHub Releases](https://github.com/Majkey25/SumRead/releases)
-- Current expectation: debug-style pre-release APK until release signing is configured.
+- [SumRead.apk](https://github.com/Majkey25/SumRead/releases/latest/download/SumRead.apk) — latest build from `main`
+- [All releases](https://github.com/Majkey25/SumRead/releases)
 
 ## Future Google Play release
 
