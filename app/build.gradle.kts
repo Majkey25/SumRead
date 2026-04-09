@@ -97,6 +97,7 @@ dependencies {
     testImplementation(libs.coroutines.test)
     testImplementation(libs.junit4)
     testImplementation(libs.truth)
+    testImplementation(libs.robolectric)
 
     androidTestImplementation(libs.compose.ui.test.junit4)
     androidTestImplementation(libs.test.androidx.junit)

@@ -12,13 +12,26 @@ import com.sumread.domain.model.AppSettings
 import com.sumread.domain.model.ChatMessage
 import com.sumread.domain.model.ChatRole
 import com.sumread.domain.repository.SettingsRepository
+import com.sumread.util.TestLoggerSetup
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
+import org.junit.BeforeClass
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
 class AiRepositoryImplOpenAiTest {
+
+    companion object {
+        @BeforeClass
+        @JvmStatic
+        fun setUp() {
+            TestLoggerSetup.setUpTestLogging()
+        }
+    }
 
     @Test
     fun `selected openai provider is used for summaries`() = runTest {

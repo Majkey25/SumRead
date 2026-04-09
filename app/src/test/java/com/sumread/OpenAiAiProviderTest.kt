@@ -12,10 +12,23 @@ import com.sumread.domain.model.ChatRole
 import com.sumread.domain.model.OperationException
 import com.sumread.domain.model.OperationFailure
 import com.sumread.util.AppConfig
+import com.sumread.util.TestLoggerSetup
 import kotlinx.coroutines.test.runTest
+import org.junit.BeforeClass
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
 class OpenAiAiProviderTest {
+
+    companion object {
+        @BeforeClass
+        @JvmStatic
+        fun setUp() {
+            TestLoggerSetup.setUpTestLogging()
+        }
+    }
 
     @Test
     fun `summarize trims content and sends the expected request`() = runTest {
