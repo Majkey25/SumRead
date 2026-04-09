@@ -28,3 +28,7 @@ Thumbs.db
 # Temporary analysis artifacts
 .reference/tmp/*
 !.reference/tmp/.gitkeep
+
+# Local Gradle daemon toolchain metadata
+gradle/gradle-daemon-jvm.properties
+

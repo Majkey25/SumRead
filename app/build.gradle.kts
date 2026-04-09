@@ -15,7 +15,9 @@ android {
         applicationId = "com.sumread"
         minSdk = 26
         targetSdk = 35
-        versionCode = (System.getenv("VERSION_CODE")?.toIntOrNull() ?: 1)
+        versionCode = providers.gradleProperty("sumread.versionCode").orNull?.toIntOrNull()
+            ?: System.getenv("VERSION_CODE")?.toIntOrNull()
+            ?: 17
         versionName = (System.getenv("VERSION_NAME") ?: "0.2.0")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
@@ -36,16 +38,16 @@ android {
         }
     }
 
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-
     kotlin {
         compilerOptions {
             jvmTarget = JvmTarget.JVM_17
             freeCompilerArgs.add("-jvm-default=no-compatibility")
         }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     buildFeatures {
