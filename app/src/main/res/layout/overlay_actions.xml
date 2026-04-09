@@ -1,46 +1,69 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/overlayActionsRoot"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:background="@drawable/bg_overlay_panel"
-    android:elevation="8dp"
-    android:orientation="vertical"
-    android:padding="12dp">
+    android:elevation="12dp"
+    android:orientation="horizontal"
+    android:padding="10dp"
+    android:showDividers="middle"
+    android:divider="@drawable/overlay_action_divider">
 
-    <Button
+    <ImageButton
         android:id="@+id/actionRead"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Read aloud" />
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:background="@drawable/bg_overlay_action_button"
+        android:contentDescription="@string/overlay_action_read"
+        android:padding="12dp"
+        android:scaleType="fitCenter"
+        android:src="@android:drawable/ic_btn_speak_now"
+        app:tint="#00668B" />
 
-    <Button
+    <ImageButton
         android:id="@+id/actionSummary"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Summarize" />
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:background="@drawable/bg_overlay_action_button"
+        android:contentDescription="@string/overlay_action_summary"
+        android:padding="12dp"
+        android:scaleType="fitCenter"
+        android:src="@android:drawable/ic_menu_sort_by_size"
+        app:tint="#00668B" />
 
-    <Button
+    <ImageButton
         android:id="@+id/actionChat"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Ask AI" />
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:background="@drawable/bg_overlay_action_button"
+        android:contentDescription="@string/overlay_action_chat"
+        android:padding="12dp"
+        android:scaleType="fitCenter"
+        android:src="@android:drawable/stat_notify_chat"
+        app:tint="#00668B" />
 
-    <Button
+    <ImageButton
         android:id="@+id/actionClipboard"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Clipboard" />
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:background="@drawable/bg_overlay_action_button"
+        android:contentDescription="@string/overlay_action_clipboard"
+        android:padding="12dp"
+        android:scaleType="fitCenter"
+        android:src="@android:drawable/ic_menu_edit"
+        app:tint="#00668B" />
 
-    <Button
+    <ImageButton
         android:id="@+id/actionStop"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:background="@drawable/bg_outline_button"
-        android:text="Stop overlay" />
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:background="@drawable/bg_overlay_action_button"
+        android:contentDescription="@string/overlay_action_stop"
+        android:padding="12dp"
+        android:scaleType="fitCenter"
+        android:src="@android:drawable/ic_menu_close_clear_cancel"
+        app:tint="#BA1A1A" />
 
 </LinearLayout>

@@ -13,7 +13,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.WindowManager
-import android.widget.Button
+import android.widget.FrameLayout
 import androidx.core.content.getSystemService
 import com.sumread.R
 import com.sumread.domain.model.CaptureMode
@@ -79,7 +79,7 @@ class FloatingService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun addBubble() {
-        val bubbleLayout = LayoutInflater.from(this).inflate(R.layout.overlay_bubble, null)
+        val bubbleLayout = LayoutInflater.from(this).inflate(R.layout.overlay_bubble, FrameLayout(this), false)
         val params = baseWindowParams().apply {
             gravity = Gravity.TOP or Gravity.START
             x = AppConfig.overlayStartX
@@ -92,22 +92,23 @@ class FloatingService : Service() {
     }
 
     private fun addActionsPanel() {
-        val panel = LayoutInflater.from(this).inflate(R.layout.overlay_actions, null)
+        val panel = LayoutInflater.from(this).inflate(R.layout.overlay_actions, FrameLayout(this), false)
         panel.visibility = View.GONE
-        panel.findViewById<Button>(R.id.actionRead).setOnClickListener {
+        panel.findViewById<View>(R.id.actionRead)?.setOnClickListener {
             launchCapture(CaptureMode.READ_ALOUD)
         }
-        panel.findViewById<Button>(R.id.actionSummary).setOnClickListener {
+        panel.findViewById<View>(R.id.actionSummary)?.setOnClickListener {
             launchCapture(CaptureMode.AI_SUMMARY)
         }
-        panel.findViewById<Button>(R.id.actionChat).setOnClickListener {
+        panel.findViewById<View>(R.id.actionChat)?.setOnClickListener {
             launchCapture(CaptureMode.AI_CHAT)
         }
-        panel.findViewById<Button>(R.id.actionClipboard).setOnClickListener {
+        val clipboardActionId = resources.getIdentifier("actionClipboard", "id", packageName)
+        panel.findViewById<View>(clipboardActionId)?.setOnClickListener {
             actionsView?.visibility = View.GONE
             startActivity(IntentFactory.clipboardMode(this))
         }
-        panel.findViewById<Button>(R.id.actionStop).setOnClickListener {
+        panel.findViewById<View>(R.id.actionStop)?.setOnClickListener {
             stopSelf()
         }
         val params = baseWindowParams().apply {
@@ -149,6 +150,8 @@ class FloatingService : Service() {
         }
         actionsView = null
         bubbleView = null
+        actionsParams = null
+        bubbleParams = null
     }
 
     private fun baseWindowParams(): WindowManager.LayoutParams {

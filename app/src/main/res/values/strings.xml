@@ -9,4 +9,10 @@
     <string name="overlay_notification_text">The floating bubble is ready. Tap it to capture selected screen text.</string>
     <string name="capture_notification_title">SumRead capture running</string>
     <string name="capture_notification_text">Waiting for a user-initiated screenshot to process.</string>
+    <string name="overlay_action_read">Read aloud</string>
+    <string name="overlay_action_summary">Summarize text</string>
+    <string name="overlay_action_chat">Ask AI</string>
+    <string name="overlay_action_clipboard">Open clipboard mode</string>
+    <string name="overlay_action_stop">Stop overlay</string>
+    <string name="capture_failed_try_again">Capture failed. Please try again.</string>
 </resources>
