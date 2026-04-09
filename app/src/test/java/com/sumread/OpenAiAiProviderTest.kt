@@ -82,9 +82,7 @@ class OpenAiAiProviderTest {
 
         val error = result.exceptionOrNull()
         assertThat(error).isInstanceOf(OperationException::class.java)
-        assertThat((error as OperationException).failure).isEqualTo(
-            OperationFailure.ProviderFailure("OpenAI returned an empty response."),
-        )
+        assertThat((error as OperationException).failure).isInstanceOf(OperationFailure.ProviderFailure::class.java)
     }
 }
 

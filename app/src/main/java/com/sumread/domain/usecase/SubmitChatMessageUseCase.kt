@@ -1,5 +1,6 @@
 package com.sumread.domain.usecase
 
+import com.sumread.domain.model.ErrorCode
 import com.sumread.domain.model.OperationFailure
 import com.sumread.domain.model.failureResult
 import com.sumread.domain.repository.AiRepository
@@ -17,7 +18,7 @@ class SubmitChatMessageUseCase @Inject constructor(
         }
 
         val session = chatSessionRepository.session.value
-            ?: return failureResult(OperationFailure.Unexpected("Start a chat session from a screen capture first."))
+            ?: return failureResult(OperationFailure.Unexpected(ErrorCode.SESSION_ERROR))
 
         chatSessionRepository.addUserMessage(trimmedMessage)
         return aiRepository.reply(
