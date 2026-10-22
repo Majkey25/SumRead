@@ -1,6 +1,7 @@
 package com.sumread.presentation.capture
 
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -42,6 +43,7 @@ class RegionSelectionActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         val imagePath = intent.getStringExtra(AppConfig.captureImagePathKey).orEmpty()
         val mode = CaptureMode.fromName(
             intent.getStringExtra(AppConfig.capturePermissionModeKey) ?: CaptureMode.READ_ALOUD.name,
@@ -137,7 +139,6 @@ class RegionSelectionActivity : ComponentActivity() {
                         ) {
                             OutlinedButton(
                                 onClick = {
-                                    viewModel.deleteCapture(imagePath)
                                     finish()
                                 },
                                 modifier = Modifier.weight(1f),
@@ -150,7 +151,6 @@ class RegionSelectionActivity : ComponentActivity() {
                                         finish()
                                     } else {
                                         viewModel.processSelection(
-                                            path = imagePath,
                                             mode = mode,
                                             selection = selection,
                                         )

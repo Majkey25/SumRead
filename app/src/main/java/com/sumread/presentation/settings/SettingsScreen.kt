@@ -223,7 +223,7 @@ private fun ProviderCard(
 
     SectionCard(title = "AI providers") {
         Text(
-            text = "Cloud AI is opt in. Only the OCR text from your selected region is sent to the provider you choose.",
+            text = "Cloud AI is opt in. Summaries send selected OCR or clipboard text to the provider you choose. Chat also sends its context and conversation. A missing key stops the request without switching providers.",
             style = MaterialTheme.typography.bodyMedium,
         )
         FlowRow(
@@ -357,7 +357,7 @@ private fun SpeechCard(
 ) {
     SectionCard(title = "Speech and language") {
         Text(
-            text = "Uses the on-device TTS engine. Language packs must be installed via your device's TTS settings. OCR currently uses the on-device Latin recognizer.",
+            text = "Uses an installed offline voice from your device's TTS engine. If none is available for the selected language, reading stops. Install language packs in your device's TTS settings. OCR uses the on-device Latin recognizer.",
             style = MaterialTheme.typography.bodyMedium,
         )
         TextButton(

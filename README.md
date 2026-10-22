@@ -4,7 +4,7 @@
 [![Target SDK](https://img.shields.io/badge/Target%20SDK-35-0F766E)](https://developer.android.com/about/versions)
 [![License](https://img.shields.io/badge/License-Proprietary-1F2937)](./LICENSE)
 [![Status](https://img.shields.io/badge/Status-In%20Development-C2410C)](#current-status)
-[![Release](https://img.shields.io/badge/Release-Pre--Release-9A3412)](#latest-pre-release-apk)
+[![Release](https://img.shields.io/badge/Release-Signing%20Blocked-9A3412)](#download-apk)
 [![Build Validation](https://github.com/Majkey25/SumRead/actions/workflows/android-build.yml/badge.svg)](https://github.com/Majkey25/SumRead/actions/workflows/android-build.yml)
 
 # SumRead
@@ -22,7 +22,7 @@ This repository is public yet proprietary, and structured for a serious future G
 - Local-first features: overlay control, screen capture flow, region selection, ML Kit OCR, TextToSpeech.
 - AI features: Groq, Gemini, and OpenAI behind provider abstractions with user-supplied keys.
 - Chat privacy: memory-only session state, no default storage of captured text or chat history.
-- Release posture: pre-release APK workflow prepared, production signing still pending.
+- Release posture: debug APKs are CI test artifacts only. Public binary releases are blocked until the original signing key and a non-debuggable release configuration are available.
 
 ## Feature overview
 
@@ -33,7 +33,7 @@ This repository is public yet proprietary, and structured for a serious future G
 - On-device text-to-speech with configurable speed, pitch, and language (27 languages supported).
 - TTS language pack installer — opens device TTS settings to download additional voices (Chinese, Japanese, Korean, Arabic, Hindi, and more).
 - AI summary mode using a selectable provider (Groq / Gemini / OpenAI).
-- Smart AI auto-switch — if the selected provider has no API key, the app automatically falls back to another configured provider so AI features keep working.
+- AI requests use only the selected provider. A missing key stops the request and asks you to configure that provider.
 - AI chat mode grounded in the selected screen content — ask follow-up questions, verify facts, or summarize further without re-capturing.
 - Secure local-only storage for provider API keys (see below).
 - Compose settings screen with permission helpers and privacy disclosures.
@@ -95,8 +95,9 @@ The app follows a single-module clean structure inside `app/src/main/java/com/su
 
 ## Download APK
 
-- [SumRead.apk](https://github.com/Majkey25/SumRead/releases/latest/download/SumRead.apk) — latest build from `main`
-- [All releases](https://github.com/Majkey25/SumRead/releases)
+- Existing [releases](https://github.com/Majkey25/SumRead/releases) contain historical debug APKs and do not include the current privacy fixes.
+- New debug builds are available only as temporary CI test artifacts. They are not supported updates to installed release APKs.
+- Public APK publication is disabled until signing continuity and a non-debuggable build are configured.
 
 ## Future Google Play release
 
@@ -134,6 +135,7 @@ Recommended manual device checks:
 Required or optional permissions are intentionally limited:
 
 - `SYSTEM_ALERT_WINDOW` for the floating overlay.
+- `HIDE_OVERLAY_WINDOWS` to protect API-key settings from overlays on Android 12+.
 - `FOREGROUND_SERVICE` for visible overlay execution.
 - `FOREGROUND_SERVICE_SPECIAL_USE` for the overlay foreground service type (required on Android 14+).
 - `FOREGROUND_SERVICE_MEDIA_PROJECTION` for the active capture service.

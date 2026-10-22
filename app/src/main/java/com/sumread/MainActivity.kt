@@ -3,9 +3,12 @@ package com.sumread
 import android.Manifest
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.speech.tts.TextToSpeech
+import android.view.MotionEvent
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -28,6 +31,10 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            window.setHideOverlayWindows(true)
+        }
         enableEdgeToEdge()
         setContent {
             SumReadTheme {
@@ -46,6 +53,12 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         viewModel.refreshPermissions()
+    }
+
+    override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        val obscured = MotionEvent.FLAG_WINDOW_IS_OBSCURED or
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) MotionEvent.FLAG_WINDOW_IS_PARTIALLY_OBSCURED else 0
+        return if (event.flags and obscured != 0) true else super.dispatchTouchEvent(event)
     }
 
     private fun openOverlayPermissionSettings() {

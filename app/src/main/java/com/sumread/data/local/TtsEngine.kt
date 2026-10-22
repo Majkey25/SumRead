@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
+import android.speech.tts.Voice
 import com.sumread.domain.model.OperationFailure
 import com.sumread.domain.model.OperationException
 import com.sumread.domain.model.SpeechOptions
@@ -37,7 +38,11 @@ class TtsEngine @Inject constructor(
             } else {
                 Locale.forLanguageTag(options.languageTag)
             }
-            engine.language = locale
+            val voice = offlineVoice(engine.voices.orEmpty(), locale)
+                ?: throw OperationException(OperationFailure.TtsUnavailable)
+            if (engine.setVoice(voice) != TextToSpeech.SUCCESS || engine.voice != voice) {
+                throw OperationException(OperationFailure.TtsUnavailable)
+            }
             engine.setSpeechRate(options.rate)
             engine.setPitch(options.pitch)
             val utteranceId = UUID.randomUUID().toString()
@@ -87,3 +92,10 @@ class TtsEngine @Inject constructor(
         }
     }
 }
+
+internal fun offlineVoice(voices: Set<Voice>, locale: Locale): Voice? = voices
+    .filter {
+        it.locale.language == locale.language && !it.isNetworkConnectionRequired &&
+            TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED !in it.features
+    }
+    .minByOrNull { if (it.locale == locale) 0 else if (it.locale.country == locale.country) 1 else 2 }

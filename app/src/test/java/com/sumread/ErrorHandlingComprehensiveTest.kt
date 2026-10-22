@@ -76,11 +76,11 @@ class ErrorHandlingComprehensiveTest {
     }
 
     @Test
-    fun scenario_ttsUnavailable_returnsDeviceSpecificMessage() {
+    fun scenario_ttsUnavailable_explainsOfflineVoiceRequirement() {
         val failure = OperationFailure.TtsUnavailable
         assertEquals(ErrorCode.TTS_UNAVAILABLE, failure.errorCode)
         assertTrue(failure.userMessage.contains("device"))
-        assertFalse(failure.userMessage.contains("install"))
+        assertTrue(failure.userMessage.contains("installed offline voice"))
     }
 
     @Test

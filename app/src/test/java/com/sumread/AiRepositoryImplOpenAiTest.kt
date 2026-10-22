@@ -11,6 +11,8 @@ import com.sumread.domain.model.AiProviderType
 import com.sumread.domain.model.AppSettings
 import com.sumread.domain.model.ChatMessage
 import com.sumread.domain.model.ChatRole
+import com.sumread.domain.model.OperationException
+import com.sumread.domain.model.OperationFailure
 import com.sumread.domain.repository.SettingsRepository
 import com.sumread.util.TestLoggerSetup
 import java.util.concurrent.atomic.AtomicInteger
@@ -74,6 +76,40 @@ class AiRepositoryImplOpenAiTest {
         assertThat(result.getOrNull()).isEqualTo("Summary")
         assertThat(openAiCalls.get()).isEqualTo(1)
     }
+
+    @Test
+    fun `missing selected key never sends summary or chat to another configured provider`() = runTest {
+        for (selected in AiProviderType.entries) {
+            for (missingKey in listOf(null, "  ")) {
+                val settings = FakeSettingsRepository(
+                    AppSettings(selected, "groq-model", "gemini-model", "openai-model", 1f, 1f, "system"),
+                    AiProviderType.entries.associateWith { "synthetic-key" }.toMutableMap().apply {
+                        if (missingKey == null) remove(selected) else put(selected, missingKey)
+                    },
+                )
+                val repository = AiRepositoryImpl(
+                    settings,
+                    GroqAiProvider(FailingGroqService()),
+                    GeminiAiProvider(FailingGeminiService()),
+                    OpenAiAiProvider(object : OpenAiApiService {
+                        override suspend fun createChatCompletion(
+                            authorization: String,
+                            request: com.sumread.data.remote.OpenAiChatRequest,
+                        ): OpenAiChatResponse = error("No provider should receive this request")
+                    }),
+                )
+
+                val summary = repository.summarize("Synthetic private capture")
+                val reply = repository.reply("Synthetic context", emptyList(), "Synthetic question")
+
+                assertThat((summary.exceptionOrNull() as? OperationException)?.failure)
+                    .isEqualTo(OperationFailure.MissingApiKey)
+                assertThat((reply.exceptionOrNull() as? OperationException)?.failure)
+                    .isEqualTo(OperationFailure.MissingApiKey)
+                assertThat(settings.requestedProviders).containsExactly(selected, selected)
+            }
+        }
+    }
 }
 
 private class FakeSettingsRepository(
@@ -82,6 +118,7 @@ private class FakeSettingsRepository(
 ) : SettingsRepository {
 
     private val state = MutableStateFlow(initialSettings)
+    val requestedProviders = mutableListOf<AiProviderType>()
 
     override val settings: Flow<AppSettings> = state
 
@@ -93,7 +130,10 @@ private class FakeSettingsRepository(
 
     override suspend fun clearApiKey(provider: AiProviderType) = Unit
 
-    override suspend fun getApiKey(provider: AiProviderType): String? = apiKeys[provider]
+    override suspend fun getApiKey(provider: AiProviderType): String? {
+        requestedProviders += provider
+        return apiKeys[provider]
+    }
 
     override suspend fun hasApiKey(provider: AiProviderType): Boolean = apiKeys.containsKey(provider)
 }

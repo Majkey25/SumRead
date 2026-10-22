@@ -13,7 +13,9 @@ import com.sumread.domain.usecase.SpeakSelectionUseCase
 import com.sumread.domain.usecase.SummarizeSelectionUseCase
 import com.sumread.util.BitmapUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.io.IOException
 import javax.inject.Inject
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -32,12 +34,16 @@ class SelectionResultViewModel @Inject constructor(
     val uiState: StateFlow<SelectionResultUiState> = mutableUiState.asStateFlow()
 
     fun loadCapture(path: String) {
-        if (mutableUiState.value.bitmap != null) {
+        if (mutableUiState.value.bitmap != null || mutableUiState.value.isLoading) {
             return
         }
-        viewModelScope.launch {
+        viewModelScope.launch(start = CoroutineStart.UNDISPATCHED) {
             mutableUiState.value = mutableUiState.value.copy(isLoading = true, errorMessage = null)
-            val bitmap = temporaryCaptureStore.load(path)
+            val bitmap = try {
+                temporaryCaptureStore.load(path)
+            } catch (_: IOException) {
+                null
+            }
             mutableUiState.value = mutableUiState.value.copy(
                 bitmap = bitmap,
                 isLoading = false,
@@ -47,7 +53,6 @@ class SelectionResultViewModel @Inject constructor(
     }
 
     fun processSelection(
-        path: String,
         mode: CaptureMode,
         selection: CaptureSelection?,
     ) {
@@ -59,43 +64,33 @@ class SelectionResultViewModel @Inject constructor(
 
         viewModelScope.launch {
             mutableUiState.value = mutableUiState.value.copy(isProcessing = true, errorMessage = null)
-            try {
-                runCatching {
-                    val croppedBitmap = BitmapUtils.crop(sourceBitmap, selection)
-                    val extractedText = ocrRepository.extractText(croppedBitmap).getOrThrow()
-                    when (mode) {
-                        CaptureMode.READ_ALOUD -> {
-                            val spokenText = speakSelectionUseCase(extractedText).getOrThrow()
-                            mutableUiState.value = mutableUiState.value.copy(resultText = spokenText)
-                        }
-
-                        CaptureMode.AI_SUMMARY -> {
-                            val summary = summarizeSelectionUseCase(extractedText).getOrThrow()
-                            mutableUiState.value = mutableUiState.value.copy(resultText = summary)
-                        }
-
-                        CaptureMode.AI_CHAT -> {
-                            chatSessionRepository.start(extractedText)
-                            mutableUiState.value = mutableUiState.value.copy(openChat = true)
-                        }
-
-                        CaptureMode.CLIPBOARD -> {
-                            mutableUiState.value = mutableUiState.value.copy(resultText = extractedText)
-                        }
+            runCatching {
+                val croppedBitmap = BitmapUtils.crop(sourceBitmap, selection)
+                val extractedText = ocrRepository.extractText(croppedBitmap).getOrThrow()
+                when (mode) {
+                    CaptureMode.READ_ALOUD -> {
+                        val spokenText = speakSelectionUseCase(extractedText).getOrThrow()
+                        mutableUiState.value = mutableUiState.value.copy(resultText = spokenText)
                     }
-                }.onFailure { error ->
-                    mutableUiState.value = mutableUiState.value.copy(errorMessage = error.toFailureMessage())
+
+                    CaptureMode.AI_SUMMARY -> {
+                        val summary = summarizeSelectionUseCase(extractedText).getOrThrow()
+                        mutableUiState.value = mutableUiState.value.copy(resultText = summary)
+                    }
+
+                    CaptureMode.AI_CHAT -> {
+                        chatSessionRepository.start(extractedText)
+                        mutableUiState.value = mutableUiState.value.copy(openChat = true)
+                    }
+
+                    CaptureMode.CLIPBOARD -> {
+                        mutableUiState.value = mutableUiState.value.copy(resultText = extractedText)
+                    }
                 }
-            } finally {
-                temporaryCaptureStore.delete(path)
+            }.onFailure { error ->
+                mutableUiState.value = mutableUiState.value.copy(errorMessage = error.toFailureMessage())
             }
             mutableUiState.value = mutableUiState.value.copy(isProcessing = false)
-        }
-    }
-
-    fun deleteCapture(path: String) {
-        viewModelScope.launch {
-            temporaryCaptureStore.delete(path)
         }
     }
 
