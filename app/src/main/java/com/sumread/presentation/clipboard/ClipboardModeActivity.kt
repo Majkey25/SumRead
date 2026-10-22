@@ -2,6 +2,7 @@ package com.sumread.presentation.clipboard
 
 import android.content.ClipboardManager
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
@@ -36,6 +37,7 @@ class ClipboardModeActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         val clipboardManager = getSystemService(ClipboardManager::class.java)
         val clipboardText = clipboardManager?.primaryClip
             ?.getItemAt(0)

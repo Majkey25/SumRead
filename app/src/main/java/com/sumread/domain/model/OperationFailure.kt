@@ -44,7 +44,7 @@ sealed interface OperationFailure {
     }
 
     data object TtsUnavailable : OperationFailure {
-        override val userMessage = "Text to speech is not available on this device."
+        override val userMessage = "An installed offline voice is required. Check your device's text-to-speech settings."
         override val errorCode = ErrorCode.TTS_UNAVAILABLE
     }
 

@@ -114,8 +114,17 @@ class MediaProjectionForegroundService : Service() {
         val mediaProjectionManager = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         val projection = mediaProjectionManager.getMediaProjection(resultCode, resultData) ?: return
         val bitmap = captureBitmap(projection)
-        val imagePath = temporaryCaptureStore.save(bitmap)
-        startActivity(IntentFactory.regionSelection(this, mode, imagePath))
+        val imagePath = try {
+            temporaryCaptureStore.save(bitmap)
+        } finally {
+            bitmap.recycle()
+        }
+        try {
+            startActivity(IntentFactory.regionSelection(this, mode, imagePath))
+        } catch (error: Exception) {
+            temporaryCaptureStore.delete(imagePath)
+            throw error
+        }
     }
 
     private suspend fun captureBitmap(projection: MediaProjection) = withContext(dispatchersProvider.main) {
